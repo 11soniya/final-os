@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Secure File Manager{% endblock %}
+
+{% block navbar %}
+<li class="nav-item">
+    <a class="nav-link" href="/register">Register</a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">
+                        <i class="bi bi-shield-lock text-primary"></i><br>
+                        Login
+                    </h2>
+                    
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        
+                        <div class="mb-3" id="otpField" style="display: none;">
+                            <label for="otp" class="form-label">2FA Code</label>
+                            <input type="text" class="form-control" id="otp" placeholder="Enter 6-digit code">
+                            <small class="text-muted">Enter the code from your authenticator app</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-0">Don't have an account?</p>
+                        <a href="/register" class="btn btn-outline-primary mt-2">
+                            <i class="bi bi-person-plus"></i> Register Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let requires2FA = false;
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const otp = document.getElementById('otp').value;
+        
+        const data = { username, password };
+        if (otp) {
+            data.otp = otp;
+        }
+        
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                if (result.requires_2fa) {
+                    // Show OTP field
+                    requires2FA = true;
+                    document.getElementById('otpField').style.display = 'block';
+                    showAlert('Please enter your 2FA code', 'info');
+                } else {
+                    // Login successful
+                    saveToken(result.access_token);
+                    saveUser(result.user);
+                    showAlert('Login successful!', 'success');
+                    
+                    // Redirect based on role
+                    setTimeout(() => {
+                        if (result.user.role === 'ADMIN') {
+                            window.location.href = '/admin';
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 1000);
+                }
+            } else {
+                showAlert(result.detail || 'Login failed', 'danger');
+            }
+        } catch (error) {
+            showAlert('An error occurred. Please try again.', 'danger');
+            console.error(error);
+        }
+    });
+</script>
+{% endblock %}
