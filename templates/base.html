@@ -1,23 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Secure File Manager{% endblock %}</title>
+    <meta name="theme-color" content="#0b0f14">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0b0f14;
+            --surface: #101826;
+            --text: #c9d1d9;
+            --muted: #8b949e;
+            --border: #1b2638;
+            --accent: #00e5ff;
+            --accent2: #7a5cff;
+            --glow: rgba(0, 229, 255, 0.5);
+        }
+
         body {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background:
+                radial-gradient(1100px 500px at 100% 0%, rgba(0,229,255,0.06), transparent 60%),
+                radial-gradient(900px 500px at 0% 100%, rgba(122,92,255,0.06), transparent 60%),
+                var(--bg);
+            color: var(--text);
         }
-        .navbar-brand {
-            font-weight: bold;
+        a { color: #9bd7ff; }
+        a:hover { color: #d7f3ff; text-shadow: 0 0 6px rgba(155,215,255,0.5); }
+
+        .navbar-brand { font-weight: bold; color: #e6f7ff !important; text-shadow: 0 0 10px rgba(0,229,255,0.4); }
+        .navbar { background: #0f141c !important; border-bottom: 1px solid var(--border);
+                  box-shadow: 0 0 12px rgba(0,229,255,0.12), inset 0 -1px 0 rgba(255,255,255,0.02); }
+        .navbar .nav-link { color: var(--muted) !important; transition: color .2s, text-shadow .2s; }
+        .navbar .nav-link:hover, .navbar .nav-link.active { color: #fff !important; text-shadow: 0 0 10px var(--glow); }
+
+        .main-content { flex: 1; }
+
+        .card {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid rgba(0, 174, 255, 0.25);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.2), 0 0 22px rgba(0,174,255,0.12);
+            border-radius: 14px;
+            transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
         }
-        .main-content {
-            flex: 1;
+        .card::after {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: 0 0 18px rgba(0,174,255,0.18);
+            opacity: .7;
         }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 174, 255, 0.6);
+            box-shadow: 0 0 0 1px rgba(0,174,255,0.35), 0 0 34px rgba(0,174,255,0.25);
+        }
+
+        /* Utility: apply blue glow border to any container */
+        .glow-border {
+            position: relative;
+            border: 1px solid rgba(0, 174, 255, 0.35) !important;
+            box-shadow: 0 0 0 1px rgba(0,174,255,0.25), 0 0 28px rgba(0,174,255,0.18) !important;
+            border-radius: 14px;
+            transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease;
+            background: var(--surface);
+        }
+        .glow-border:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 174, 255, 0.7) !important;
+            box-shadow: 0 0 0 1px rgba(0,174,255,0.45), 0 0 40px rgba(0,174,255,0.28) !important;
+        }
+        .card-header { background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+
+        .btn { border-radius: 10px; border: 1px solid transparent; transition: transform .06s ease, box-shadow .2s ease, border-color .2s ease; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-primary {
+            background: linear-gradient(135deg, #0ea5ea, #7a5cff);
+            border-color: rgba(122,92,255,0.4);
+            box-shadow: 0 0 14px rgba(122,92,255,0.35), 0 0 24px rgba(14,165,234,0.25);
+        }
+        .btn-primary:hover { box-shadow: 0 0 18px rgba(122,92,255,0.45), 0 0 28px rgba(14,165,234,0.35); }
+
+        .form-control, .form-select { background: #0f1724; border: 1px solid var(--border); color: var(--text); }
+        .form-control::placeholder { color: #7b8594; }
+        .form-control:focus, .form-select:focus {
+            background: #101a2b; border-color: var(--accent);
+            box-shadow: 0 0 0 .2rem rgba(0,229,255,0.15), 0 0 14px rgba(0,229,255,0.25);
+            color: #fff;
+        }
+
+        .table { color: var(--text); }
+        .table thead th { border-bottom-color: var(--border); }
+        .table-hover tbody tr:hover { background-color: rgba(0,229,255,0.05); }
+        .table > :not(caption) > * > * { background-color: transparent; border-bottom-color: var(--border); }
+        /* Make contextual warning rows visible on dark */
+        tr.table-warning > td,
+        tr.table-warning > th,
+        .table-warning > td,
+        .table-warning > th {
+            background-color: rgba(255, 193, 7, 0.12) !important; /* amber */
+            color: #ffe8a1 !important;
+        }
+        /* Warning row hover: switch to black text for maximum contrast */
+        .table.table-hover tbody tr.table-warning:hover,
+        tr.table-warning:hover > td,
+        tr.table-warning:hover > th {
+            background-color: rgba(255, 193, 7, 0.18) !important;
+            color: #0b0b0b !important;
+        }
+        tr.table-warning a { color: #111 !important; }
+        tr.table-warning:hover a { color: #000 !important; text-shadow: none; }
+        tr.table-warning > td:first-child {
+            box-shadow: inset 3px 0 0 rgba(255, 193, 7, 0.8);
+        }
+        /* Tweak badges for better contrast on dark */
+        .badge.bg-warning { background: linear-gradient(135deg, #ffd166, #fcbf49) !important; color: #1b1b1b !important; }
+        .badge.bg-info { background: linear-gradient(135deg, #0ea5ea, #7a5cff) !important; color: #ffffff !important; }
+
+        .modal-content { background: var(--surface); border: 1px solid var(--border); box-shadow: 0 0 24px rgba(0,229,255,0.12); }
+
+        .progress { background: rgba(255,255,255,0.06); border: 1px solid var(--border); box-shadow: inset 0 0 12px rgba(0,229,255,0.08); }
+
+        .badge { box-shadow: 0 0 10px rgba(255,255,255,0.06); }
+
         .alert-fixed {
             position: fixed;
             top: 70px;
@@ -30,7 +142,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="bi bi-shield-lock"></i> Secure File Manager
@@ -55,7 +167,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-light py-3 mt-5">
+    <footer class="bg-dark border-top py-3 mt-5">
         <div class="container text-center text-muted">
             <small>&copy; 2025 Secure File Manager | Built with Security in Mind</small>
         </div>
