@@ -210,37 +210,19 @@
         </div>
     </div>
 
-    <!-- Files Table -->
+    <!-- Files Metadata with Expandable Details -->
     <div class="row mt-4 mb-4">
         <div class="col-12">
             <div class="card shadow glow-border">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-files"></i> All Files - Complete Metadata</h5>
+                    <small class="text-muted">Click on any file to view detailed metadata</small>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Filename</th>
-                                    <th>Owner</th>
-                                    <th>Size</th>
-                                    <th>Type</th>
-                                    <th>Checksum</th>
-                                    <th>Uploaded</th>
-                                    <th>Last Accessed</th>
-                                    <th>Encrypted</th>
-                                </tr>
-                            </thead>
-                            <tbody id="filesMetadataTable">
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted">
-                                        <i class="bi bi-hourglass-split"></i> Loading files...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div id="filesMetadataList">
+                        <div class="text-center text-muted p-4">
+                            <i class="bi bi-hourglass-split"></i> Loading files...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -478,37 +460,121 @@
     }
 
     function displayFilesMetadata(files) {
-        const tbody = document.getElementById('filesMetadataTable');
+        const container = document.getElementById('filesMetadataList');
         
         if (files.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="9" class="text-center text-muted">
-                        <i class="bi bi-inbox"></i> No files uploaded yet
-                    </td>
-                </tr>
+            container.innerHTML = `
+                <div class="text-center text-muted p-4">
+                    <i class="bi bi-inbox"></i> No files uploaded yet
+                </div>
             `;
             return;
         }
         
-        tbody.innerHTML = files.map(file => `
-            <tr>
-                <td><code>${file.id}</code></td>
-                <td>
-                    <i class="bi bi-file-earmark"></i> ${file.filename}<br>
-                    <small class="text-muted">${file.original_filename}</small>
-                </td>
-                <td><span class="badge bg-info">${file.owner_username}</span></td>
-                <td>${formatFileSize(file.size)}</td>
-                <td><small>${file.content_type || 'N/A'}</small></td>
-                <td><code style="font-size:0.7em">${file.checksum.substring(0, 16)}...</code></td>
-                <td><small>${new Date(file.uploaded_at).toLocaleString()}</small></td>
-                <td><small>${file.last_accessed ? new Date(file.last_accessed).toLocaleString() : 'Never'}</small></td>
-                <td>
-                    ${file.encrypted ? '<span class="badge bg-success"><i class="bi bi-lock-fill"></i> Yes</span>' : '<span class="badge bg-warning"><i class="bi bi-unlock"></i> No</span>'}
-                </td>
-            </tr>
+        container.innerHTML = files.map(file => `
+            <div class="file-item mb-2" style="border: 1px solid rgba(0, 174, 255, 0.2); border-radius: 8px; transition: all 0.2s;">
+                <!-- Collapsed View -->
+                <div class="file-header p-3" style="cursor: pointer; background: rgba(0, 174, 255, 0.05);" onclick="toggleFileDetails(${file.id})">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <strong style="color: var(--accent);">#${file.serial_no}</strong>
+                        </div>
+                        <div class="col">
+                            <i class="bi bi-file-earmark-text"></i> 
+                            <strong>${file.original_filename}</strong>
+                            <small class="text-muted ms-2">(${file.size_readable})</small>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge bg-info"><i class="bi bi-person"></i> ${file.owner_username}</span>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-chevron-down" id="chevron-${file.id}"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Expanded Details (Hidden by default) -->
+                <div class="file-details p-4" id="details-${file.id}" style="display: none; background: rgba(0, 174, 255, 0.02);">
+                    <div class="row">
+                        <!-- Column 1: Basic Info -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3"><i class="bi bi-info-circle"></i> Basic Information</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><td class="text-muted">File ID:</td><td><code>#${file.id}</code></td></tr>
+                                <tr><td class="text-muted">Filename:</td><td><strong>${file.filename}</strong></td></tr>
+                                <tr><td class="text-muted">Original Name:</td><td>${file.original_filename}</td></tr>
+                                <tr><td class="text-muted">Extension:</td><td><span class="badge bg-secondary">${file.file_extension}</span></td></tr>
+                                <tr><td class="text-muted">Size:</td><td>${file.size_readable} <small class="text-muted">(${file.size.toLocaleString()} bytes)</small></td></tr>
+                                <tr><td class="text-muted">Content Type:</td><td><code>${file.content_type}</code></td></tr>
+                                <tr><td class="text-muted">Encrypted:</td><td>${file.encrypted ? '<span class="badge bg-success"><i class="bi bi-lock-fill"></i> Yes</span>' : '<span class="badge bg-warning"><i class="bi bi-unlock"></i> No</span>'}</td></tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Column 2: Owner & Security -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3"><i class="bi bi-shield-check"></i> Owner & Security</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><td class="text-muted">Owner:</td><td><span class="badge bg-info">${file.owner_username}</span></td></tr>
+                                <tr><td class="text-muted">Owner Email:</td><td>${file.owner_email}</td></tr>
+                                <tr><td class="text-muted">Checksum (SHA256):</td><td><code style="font-size:0.75em; word-break: break-all;">${file.checksum}</code></td></tr>
+                                <tr><td class="text-muted">File Path:</td><td><small><code>${file.filepath}</code></small></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr style="border-color: rgba(0, 174, 255, 0.2);">
+                    
+                    <div class="row">
+                        <!-- Column 3: Timestamps -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3"><i class="bi bi-clock-history"></i> Timestamps & Activity</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><td class="text-muted">Uploaded:</td><td>${file.uploaded_at_readable} <small class="text-muted">(${file.days_old} days ago)</small></td></tr>
+                                <tr><td class="text-muted">Last Modified:</td><td>${file.last_modified_readable}</td></tr>
+                                <tr><td class="text-muted">Last Accessed:</td><td>${file.last_accessed_readable}</td></tr>
+                                <tr><td class="text-muted">Access Count:</td><td><span class="badge bg-success">${file.access_count} downloads</span></td></tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Column 4: Sharing Info -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3"><i class="bi bi-share"></i> Sharing & Permissions</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr><td class="text-muted">Shared With:</td><td><span class="badge bg-info">${file.permissions_count} user(s)</span></td></tr>
+                            </table>
+                            ${file.shared_with.length > 0 ? `
+                                <div class="mt-2">
+                                    <small class="text-muted d-block mb-2">Shared users:</small>
+                                    ${file.shared_with.map(u => `
+                                        <div class="mb-2 p-2" style="background: rgba(0, 174, 255, 0.05); border-radius: 6px;">
+                                            <strong>${u.username}</strong><br>
+                                            <small class="text-muted">
+                                                ${u.can_read ? '<i class="bi bi-eye text-success"></i> Read ' : ''}
+                                                ${u.can_write ? '<i class="bi bi-pencil text-warning"></i> Write ' : ''}
+                                                ${u.can_share ? '<i class="bi bi-share text-info"></i> Share' : ''}
+                                            </small>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : '<small class="text-muted">Not shared with anyone</small>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
         `).join('');
+    }
+    
+    function toggleFileDetails(fileId) {
+        const details = document.getElementById(`details-${fileId}`);
+        const chevron = document.getElementById(`chevron-${fileId}`);
+        
+        if (details.style.display === 'none') {
+            details.style.display = 'block';
+            chevron.className = 'bi bi-chevron-up';
+        } else {
+            details.style.display = 'none';
+            chevron.className = 'bi bi-chevron-down';
+        }
     }
 
     function formatFileSize(bytes) {

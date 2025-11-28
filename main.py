@@ -755,21 +755,65 @@ def get_all_files_admin(
     files = db.query(File).filter(File.is_deleted == False).order_by(File.uploaded_at.desc()).all()
     
     result = []
-    for file in files:
+    for idx, file in enumerate(files, 1):
         owner = db.query(User).filter(User.id == file.owner_id).first()
+        
+        # Count permissions/shares
+        permissions_count = db.query(FilePermission).filter(FilePermission.file_id == file.id).count()
+        shared_with = db.query(FilePermission).filter(FilePermission.file_id == file.id).all()
+        shared_users = []
+        for perm in shared_with:
+            shared_user = db.query(User).filter(User.id == perm.user_id).first()
+            if shared_user:
+                shared_users.append({
+                    "username": shared_user.username,
+                    "can_read": perm.can_read,
+                    "can_write": perm.can_write,
+                    "can_share": perm.can_share
+                })
+        
+        # Get file extension
+        import os
+        file_extension = os.path.splitext(file.original_filename)[1].lower() or "No extension"
+        
+        # Calculate access count from audit logs
+        access_count = db.query(AuditLog).filter(
+            AuditLog.action == "file_downloaded",
+            AuditLog.details.like(f"%ID: {file.id}%")
+        ).count()
+        
+        # Time since upload
+        from datetime import datetime, timedelta
+        time_diff = datetime.utcnow() - file.uploaded_at
+        days_old = time_diff.days
+        
         result.append({
+            "serial_no": idx,
             "id": file.id,
             "filename": file.filename,
             "original_filename": file.original_filename,
+            "file_extension": file_extension,
             "size": file.size,
-            "content_type": file.content_type,
+            "size_readable": f"{file.size / 1024:.2f} KB" if file.size < 1024*1024 else f"{file.size / (1024*1024):.2f} MB",
+            "content_type": file.content_type or "Unknown",
             "checksum": file.checksum,
+            "checksum_short": file.checksum[:16],
             "owner_id": file.owner_id,
             "owner_username": owner.username if owner else "Unknown",
+            "owner_email": owner.email if owner else "N/A",
             "uploaded_at": file.uploaded_at.isoformat(),
+            "uploaded_at_readable": file.uploaded_at.strftime("%Y-%m-%d %H:%M:%S"),
             "last_accessed": file.last_accessed.isoformat() if file.last_accessed else None,
+            "last_accessed_readable": file.last_accessed.strftime("%Y-%m-%d %H:%M:%S") if file.last_accessed else "Never",
             "last_modified": file.last_modified.isoformat(),
-            "encrypted": file.encrypted
+            "last_modified_readable": file.last_modified.strftime("%Y-%m-%d %H:%M:%S"),
+            "encrypted": file.encrypted,
+            "filepath": file.filepath,
+            "is_deleted": file.is_deleted,
+            "days_old": days_old,
+            "access_count": access_count,
+            "permissions_count": permissions_count,
+            "shared_with": shared_users
         })
     
     return result
