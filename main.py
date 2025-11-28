@@ -746,6 +746,35 @@ def get_logs(
     return logs
 
 
+@app.get("/api/admin/files")
+def get_all_files_admin(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """Get all files with complete metadata (admin only)"""
+    files = db.query(File).filter(File.is_deleted == False).order_by(File.uploaded_at.desc()).all()
+    
+    result = []
+    for file in files:
+        owner = db.query(User).filter(User.id == file.owner_id).first()
+        result.append({
+            "id": file.id,
+            "filename": file.filename,
+            "original_filename": file.original_filename,
+            "size": file.size,
+            "content_type": file.content_type,
+            "checksum": file.checksum,
+            "owner_id": file.owner_id,
+            "owner_username": owner.username if owner else "Unknown",
+            "uploaded_at": file.uploaded_at.isoformat(),
+            "last_accessed": file.last_accessed.isoformat() if file.last_accessed else None,
+            "last_modified": file.last_modified.isoformat(),
+            "encrypted": file.encrypted
+        })
+    
+    return result
+
+
 @app.get("/api/admin/dashboard", response_model=DashboardStats)
 def get_dashboard_stats(
     current_user: User = Depends(require_admin),
