@@ -8,14 +8,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 # Security settings
-# IMPORTANT: Set these as environment variables in production!
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-f8a3b2c1d4e5f6g7h8i9j0k1l2m3n4o5")
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Encryption key for file storage (32 bytes for AES-256)
 # In production, store this in a secure key management system
-# IMPORTANT: This must remain constant or you won't be able to decrypt existing files!
 ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY", "Wh8bQ7kR9mP2xV5nL3fT6jC4yN8aE1dS")
 
 # Database

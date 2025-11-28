@@ -4,10 +4,7 @@
 
 {% block navbar %}
 <li class="nav-item">
-    <a class="nav-link active" href="/dashboard">My Files</a>
-</li>
-<li class="nav-item" id="adminNavLink" style="display: none;">
-    <a class="nav-link" href="/admin">Admin</a>
+    <a class="nav-link" href="/dashboard">My Files</a>
 </li>
 <li class="nav-item">
     <a class="nav-link" href="#" onclick="logout()">Logout</a>
@@ -170,11 +167,6 @@
     
     if (!token || !user) {
         window.location.href = '/login';
-    }
-
-    // Show admin link if user is admin
-    if (user && user.role === 'ADMIN') {
-        document.getElementById('adminNavLink').style.display = 'block';
     }
 
     // Load files on page load

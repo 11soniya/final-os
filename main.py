@@ -208,19 +208,9 @@ def login(login_data: UserLogin, request: Request, db: Session = Depends(get_db)
     # Find user
     user = db.query(User).filter(User.username == login_data.username).first()
     
-    if not user:
+    if not user or not verify_password(login_data.password, user.password_hash):
         record_login_attempt(db, login_data.username, False, ip_address)
-        log_event(db, "login_failed", f"User not found: {login_data.username}",
-                 severity=SEVERITY_WARNING, success=False, ip_address=ip_address)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
-        )
-    
-    # Verify password
-    if not verify_password(login_data.password, user.password_hash):
-        record_login_attempt(db, login_data.username, False, ip_address)
-        log_event(db, "login_failed", f"Invalid password for user: {login_data.username}",
+        log_event(db, "login_failed", f"Invalid credentials: {login_data.username}",
                  severity=SEVERITY_WARNING, success=False, ip_address=ip_address)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
